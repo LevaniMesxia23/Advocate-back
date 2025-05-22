@@ -8,6 +8,7 @@ import carouselRoutes from './routes/carousel'
 import contactRoutes from './routes/contact'
 import teamRoutes from './routes/team'
 import blogRoutes from './routes/blog'
+import commentRoutes from './routes/comment'
 dotenv.config()
 
 const app = express()
@@ -22,4 +23,5 @@ app.use('/api/carousel', carouselRoutes)
 app.use('/api/contact', contactRoutes)
 app.use('/api/team', teamRoutes)
 app.use('/api/blog', blogRoutes)
+app.use('/api/comment', commentRoutes)
 export default app;
