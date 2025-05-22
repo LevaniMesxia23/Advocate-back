@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createBlog, getAllBlogs, getBlogBySlug, updateBlog, deleteBlog } from '../controllers/blog'
+import { createBlog, getAllBlogs, getBlogBySlug, updateBlog, deleteBlog, getBlogWithNav } from '../controllers/blog'
 import { validate } from '../middlewares/validate'
 import { blogSchema, blogUpdateSchema } from '../validators/blog'
 import { requireAdmin } from '../middlewares/auth'
@@ -184,6 +184,48 @@ router.put('/:id', requireAdmin, validate(blogUpdateSchema), updateBlog)
  *         description: Unauthorized
  */
 router.delete('/:id', requireAdmin, deleteBlog)
+/**
+ * @swagger
+ * /api/blog/with-nav/{slug}:
+ *   get:
+ *     summary: Get a blog with navigation
+ *     tags: [Blogs]
+ *     description: Retrieve a blog by slug with next and previous blog navigation
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The blog slug
+ *     responses:
+ *       200:
+ *         description: Blog with navigation links
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 current:
+ *                   $ref: '#/components/schemas/Blog'
+ *                 next:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                     slug:
+ *                       type: string
+ *                 previous:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                     slug:
+ *                       type: string
+ *       404:
+ *         description: Blog not found
+ */
+router.get('/with-nav/:slug', getBlogWithNav)
 
 /**
  * @swagger

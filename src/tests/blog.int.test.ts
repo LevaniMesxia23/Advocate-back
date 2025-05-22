@@ -50,6 +50,15 @@ describe('Blog API', () => {
     expect(res.body.title).toBe('Test Blog')
   })
 
+  it('should get a blog with navigation', async () => {
+    const res = await request(app).get(`/api/blog/with-nav/${slug}`)
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('current')
+    expect(res.body).toHaveProperty('previous')
+    expect(res.body).toHaveProperty('next')
+
+  })
+
   it('should update a blog', async () => {
     const res = await request(app).put(`/api/blog/${blogId}`).set('Cookie', `token=${token}`).send({
       title: 'Updated Blog',

@@ -72,3 +72,13 @@ export const deleteBlog = async (req: Request, res: Response) => {
   res.status(200).json({message: 'Blog deleted successfully'})
 }
 
+export const getBlogWithNav = async (req: Request, res: Response) => {
+  const current = await Blog.findOne({slug: req.params.slug})
+  if(!current){
+    res.status(404).json({error: 'Blog not found'})
+    return
+  }
+  const next = await Blog.findOne({createdAt: {$gt: current.createdAt}}).sort({createdAt: 1}).select('title slug')
+  const previous = await Blog.findOne({createdAt: {$lt: current.createdAt}}).sort({createdAt: -1}).select('title slug')
+  res.status(200).json({current, next, previous})
+}
