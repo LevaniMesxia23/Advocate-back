@@ -1,7 +1,11 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import Admin from '../models/Admin'
-import { generateToken } from '../utils/jwt'
+import { generateRefreshToken, generateToken } from '../utils/jwt'
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export const register = async (req: Request, res: Response) => {
   const { email, password } = req.body
@@ -20,9 +24,18 @@ export const register = async (req: Request, res: Response) => {
     password: hashedPassword,
   })
 
-  const token = generateToken(admin._id.toString())
+  const accessToken = generateToken(admin._id.toString())
+  const refreshToken = generateRefreshToken(admin._id.toString())
+  
+  admin.refreshToken = refreshToken
+  await admin.save()
 
-  res.cookie('token', token, {
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development',
+    sameSite: 'lax',
+  })
+  res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development',
     sameSite: 'lax',
@@ -52,9 +65,19 @@ export const login = async (req: Request, res: Response) => {
     return
   }
 
-  const token = generateToken(admin._id.toString())
+  const accessToken = generateToken(admin._id.toString())
+  const refreshToken = generateRefreshToken(admin._id.toString())
 
-  res.cookie('token', token, {
+  admin.refreshToken = refreshToken
+  await admin.save()
+
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development',
+    sameSite: 'lax',
+  })
+
+  res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development',
     sameSite: 'lax',
@@ -62,5 +85,44 @@ export const login = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: 'Admin logged in successfully',
+  })
+}
+
+export const refreshToken = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken
+  if (!refreshToken) {
+    res.status(401).json({
+      message: 'Unauthorized',
+    })
+    return
+  }
+
+  let payload: any
+  try {
+    payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET!)
+  } catch (error) {
+    res.status(401).json({
+      message: 'Unauthorized',
+    })
+    return
+  }
+
+  const admin = await Admin.findById(payload.id)
+  if (!admin || admin.refreshToken !== refreshToken) {
+    res.status(401).json({
+      message: 'Unauthorized',
+    })
+    return
+  }
+
+  const newAccessToken = generateToken(admin._id.toString())
+  res.cookie('accessToken', newAccessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development',
+    sameSite: 'lax',
+  })
+
+  res.status(200).json({
+    message: 'Token refreshed successfully',
   })
 }
